@@ -147,7 +147,6 @@ static int __send_virq(struct vcpu *vcpu,
 	virq->h_intno = hno;
 	virq->v_intno = vno;
 	virq->hw = hw;
-	virq->id = index;
 	virq->pr = pr;
 	set_bit(index, virq_struct->irq_bitmap);
 
@@ -338,15 +337,15 @@ static void irq_enter_to_guest(struct task *task, void *data)
 	 * here we send the real virq to the vcpu
 	 * before it enter to guest
 	 */
-	struct virq *virq;
+	struct virq *virq, *n;
 	struct vcpu *vcpu = task_to_vcpu(task);
 	struct virq_struct *virq_struct = &vcpu->virq_struct;
 
 	spin_lock(&virq_struct->lock);
 
-	list_for_each_entry(virq, &virq_struct->pending_list, list) {
+	list_for_each_entry_safe(virq, n, &virq_struct->pending_list, list) {
 		if (virq->state != VIRQ_STATE_OFFLINE) {
-			pr_debug("something was wrong with this irq %d\n", virq->id);
+			pr_error("something was wrong with this irq %d\n", virq->id);
 			continue;
 		}
 
